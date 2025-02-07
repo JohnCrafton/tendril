@@ -1,5 +1,8 @@
 flask
-python-dotenv
 minio
-tld
+python-dotenv
+requests
+redis
 flask-session
+sendgrid
+ffmpeg-python

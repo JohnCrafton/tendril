@@ -1,271 +1,470 @@
-<!-- templates/video.html -->
-{% extends "base.html" %} {% block title %}Video ({{ email }}){% endblock %} {%
-block head %} {{ super() }} {% endblock %} {% block content %}
-<div>
-  <h2>Record or Upload a Video</h2>
-  {% if error %}
-  <p class="error">{{ error }}</p>
-  {% endif %}
-  <div class="container">
-    <h1>Video Capture</h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Video Capture</title>
+    <style>
+      body {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial;
+      }
+      .container {
+        text-align: center;
+      }
+      #video,
+      #preview {
+        width: 100%;
+        max-width: 640px;
+        margin: 20px 0;
+      }
+      .hidden {
+        display: none;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      #uploadProgress {
+        margin: 10px 0;
+      }
+      .upload-section {
+        margin: 20px 0;
+        padding: 20px;
+        border-top: 1px solid #ddd;
+      }
+      .accepted-formats {
+        color: #666;
+        font-size: 0.9em;
+        margin: 10px 0;
+      }
+      .error {
+        color: #dc3545;
+        margin: 10px 0;
+      }
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px;
+      }
+      .video-card {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 8px;
+      }
+      .video-preview {
+        width: 100%;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+      }
+      .video-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+      .button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: none;
+      }
+      .download {
+        background: #28a745;
+        color: white;
+      }
+      .delete {
+        background: #dc3545;
+        color: white;
+      }
+      .progress {
+        width: 100%;
+        background-color: #f3f3f3;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+      .progress-bar {
+        width: 0;
+        height: 20px;
+        background-color: #007bff;
+        text-align: center;
+        color: white;
+        line-height: 20px;
+      }
+      p.greeting {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        text-align: right;
+      }
+      div.crafton {
+        font-size: 0.8em;
+        width: 70%;
+        margin: 0 auto;
+        text-align: justify;
+      }
+      .progress-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        color: white;
+        min-width: 50%;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 20px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+      .controls {
+        margin: 20px 0;
+        text-align: center;
+      }
+      p span {
+        display: block;
+        margin: 10px 0;
+      }
+      p {
+        border-bottom: #007bff 1px dotted;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Short Video Capture/Upload</h1>
+      {% if email %}
+      <p class="greeting">Welcome, {{ email }}</p>
+      {% endif %}
 
-    <div id="captureArea">
-      <video id="video" autoplay></video>
-      <br />
-      <button id="startButton">Start Recording</button>
-      <button id="stopButton" class="hidden">Stop Recording</button>
-      <div class="upload-section">
-        <p>Or upload existing video:</p>
-        <input
-          type="file"
-          id="fileInput"
-          accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
-          style="display: none"
-        />
-        <button id="uploadFileButton">Choose Video File</button>
-        <p class="accepted-formats">Accepted formats: MP4, MOV, WEBM, MKV</p>
+      <div id="captureArea">
+        <video id="video" autoplay></video>
+        <br />
+        <button id="startButton">Start Recording</button>
+        <button id="stopButton" class="hidden">Stop Recording</button>
+        <div class="upload-section">
+          <p>Or upload existing video:</p>
+          <input
+            type="file"
+            id="fileInput"
+            accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
+            style="display: none"
+          />
+          <button id="uploadFileButton">Choose Video File</button>
+          <p class="accepted-formats">Accepted formats: MP4, MOV, WEBM, 3GPP</p>
+        </div>
       </div>
+
+      <div id="previewArea" class="hidden">
+        <video id="preview" controls></video>
+        <br />
+        <button id="submitButton" class="button">Submit Video</button>
+        <div id="uploadProgress" class="error"></div>
+        <div class="progress">
+          <div id="progressBar" class="progress-bar">0%</div>
+        </div>
+      </div>
+
+      <div id="progressOverlay" class="hidden">
+        <div class="progress-container">
+          <div id="progressMessage">Uploading...</div>
+          <div class="progress">
+            <div id="progressBar" class="progress-bar">0%</div>
+          </div>
+          <button id="confirmButton" class="hidden">OK</button>
+        </div>
+      </div>
+
+      <hr />
+
+      <div class="crafton">
+        <p>
+          <span
+            ><strong>2024-12-16</strong>: I've added an auto-upload feature for
+            "recorded" videos as it maybe wasn't clear that the user needed to
+            click "Upload" afterward.</span
+          >
+          <span
+            >If you want to "retake" your video, delete the one you didn't like
+            and start again.</span
+          >
+          <span
+            >My apologies if you recorded something and it didn't make it to my
+            server!</span
+          >
+        </p>
+        <p>
+          Please try to keep submissions to a reasonable length (under 2
+          minutes). I'm trying to sort out "retry" logic, but that's not quite
+          ready for prime-time yet. I recommend writing a script or
+          pre-recording your greeting.
+        </p>
+        <p>
+          If for some reason things don't work right, email me (john.crafton at
+          gmail dot com) and I'll see what's up. I get errors sent to me, but
+          descriptive text about what browser you're using and what you're
+          seeing is always helpful. Feedback is always appreciated!
+        </p>
+        <p>Thanks, in advance!</p>
+      </div>
+
+      <hr />
+
+      <h2>Recorded Videos</h2>
+      <div id="videoGrid" class="video-grid"></div>
     </div>
 
-    <div id="previewArea" class="hidden">
-      <video id="preview" controls></video>
-      <br />
-      <button id="uploadButton">Upload</button>
-      <button id="retakeButton">Retake</button>
-      <div id="uploadProgress"></div>
-    </div>
+    <script>
+      // Global variables
+      let mediaRecorder;
+      let recordedChunks = [];
+      let uploadedFilename = "";
+      let recordedFiletype = "video/webm";
+      let videoUploaded = false;
 
-    <hr />
+      async function setupCamera() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        document.getElementById("video").srcObject = stream;
+        return stream;
+      }
 
-    <h2>Recorded Videos</h2>
-    <div id="videoGrid" class="video-grid"></div>
-  </div>
-</div>
+      document.getElementById("startButton").onclick = async () => {
+        const stream = await setupCamera();
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "video/webm",
+        });
 
-<script>
-  let mediaRecorder;
-  let recordedChunks = [];
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
 
-  async function setupCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-    document.getElementById("video").srcObject = stream;
-    return stream;
-  }
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(recordedChunks, { type: recordedFiletype });
+          const formData = new FormData();
+          formData.append("video", blob, "recorded_video.webm");
 
-  document.getElementById("startButton").onclick = async () => {
-    const stream = await setupCamera();
-    mediaRecorder = new MediaRecorder(stream, {
-      mimeType: "video/webm",
-    });
+          document.getElementById("progressOverlay").classList.remove("hidden");
+          document.getElementById("progressBar").style.width = "0%";
+          document.getElementById("progressBar").textContent = "0%";
 
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
-    };
+          const startTime = Date.now();
 
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(recordedChunks, { type: "video/webm" });
-      document.getElementById("preview").src = URL.createObjectURL(blob);
-      document.getElementById("captureArea").classList.add("hidden");
-      document.getElementById("previewArea").classList.remove("hidden");
-    };
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-    mediaRecorder.start();
-    document.getElementById("startButton").classList.add("hidden");
-    document.getElementById("stopButton").classList.remove("hidden");
-  };
+          const elapsedTime = Date.now() - startTime;
+          const remainingTime = Math.max(3000 - elapsedTime, 0);
 
-  document.getElementById("stopButton").onclick = () => {
-    mediaRecorder.stop();
-    document
-      .getElementById("video")
-      .srcObject.getTracks()
-      .forEach((track) => track.stop());
-  };
+          setTimeout(async () => {
+            if (response.ok) {
+              const result = await response.json();
+              uploadedFilename = result.video;
+              videoUploaded = true;
+              document.getElementById("progressBar").style.width = "100%";
+              document.getElementById("progressBar").textContent = "100%";
+              document.getElementById("progressMessage").textContent =
+                "Upload complete!";
+            } else {
+              document.getElementById("progressMessage").textContent =
+                "Failed to upload video.";
+            }
 
-  document.getElementById("retakeButton").onclick = () => {
-    // Clear recorded chunks
-    recordedChunks = [];
+            document.getElementById("confirmButton").classList.remove("hidden");
+          }, remainingTime);
 
-    // Clear preview video
-    const previewVideo = document.getElementById("preview");
-    const oldSrc = previewVideo.src;
-    previewVideo.src = "";
-    previewVideo.load();
+          document.getElementById("captureArea").classList.add("hidden");
+          document.getElementById("previewArea").classList.remove("hidden");
+          document.getElementById("preview").src = URL.createObjectURL(blob);
+        };
 
-    // Clear the video object as well
-    const video = document.getElementById("video");
-    video.pause();
-    video.removeAttribute("src");
-    video.load("");
+        mediaRecorder.start();
+        document.getElementById("startButton").classList.add("hidden");
+        document.getElementById("stopButton").classList.remove("hidden");
+      };
 
-    // Clear the object URL to prevent memory leaks
-    if (oldSrc.startsWith("blob:")) {
-      URL.revokeObjectURL(oldSrc);
-    }
+      document.getElementById("stopButton").onclick = () => {
+        mediaRecorder.stop();
+        document
+          .getElementById("video")
+          .srcObject.getTracks()
+          .forEach((track) => track.stop());
+      };
 
-    // Reset UI
-    document.getElementById("previewArea").classList.add("hidden");
-    document.getElementById("captureArea").classList.remove("hidden");
-    document.getElementById("startButton").classList.remove("hidden");
-    document.getElementById("stopButton").classList.add("hidden");
+      document.getElementById("uploadFileButton").onclick = () => {
+        document.getElementById("fileInput").click();
+      };
 
-    // Clear upload progress message
-    document.getElementById("uploadProgress").textContent = "";
-  };
+      document.getElementById("fileInput").onchange = async (event) => {
+        const file = event.target.files[0];
+        const formData = new FormData();
+        formData.append("video", file);
 
-  document.getElementById("uploadButton").onclick = async () => {
-    // Disable the retake button
-    document.getElementById("retakeButton").disabled = true;
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-    const blob = new Blob(recordedChunks, { type: "video/webm" });
-    const formData = new FormData();
-    formData.append("video", blob, "video.webm");
+        if (response.ok) {
+          const result = await response.json();
+          uploadedFilename = result.video;
+          videoUploaded = true;
+          alert("Video uploaded successfully!");
+        } else {
+          alert("Failed to upload video.");
+        }
+      };
 
-    try {
-      const response = await fetch("/video", {
-        method: "POST",
-        body: formData,
+      document.getElementById("confirmButton").onclick = () => {
+        document.getElementById("progressOverlay").classList.add("hidden");
+        document.getElementById("confirmButton").classList.add("hidden");
+        // Refresh page to show new video
+        window.location.reload();
+      };
+
+      document.getElementById("submitButton").onclick = async () => {
+        const blob = new Blob(recordedChunks, { type: recordedFiletype });
+        const formData = new FormData();
+        formData.append("video", blob, "recorded_video.webm");
+
+        document.getElementById("progressOverlay").classList.remove("hidden");
+        document.getElementById("progressBar").style.width = "0%";
+        document.getElementById("progressBar").textContent = "0%";
+
+        const startTime = Date.now();
+
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(3000 - elapsedTime, 0);
+
+        setTimeout(async () => {
+          if (response.ok) {
+            const result = await response.json();
+            uploadedFilename = result.video;
+            videoUploaded = true;
+            document.getElementById("progressBar").style.width = "100%";
+            document.getElementById("progressBar").textContent = "100%";
+            document.getElementById("progressMessage").textContent =
+              "Upload complete!";
+          } else {
+            document.getElementById("progressMessage").textContent =
+              "Failed to upload video.";
+          }
+          document.getElementById("confirmButton").classList.remove("hidden");
+        }, remainingTime);
+      };
+
+      window.addEventListener("beforeunload", (event) => {
+        if (!videoUploaded) {
+          event.preventDefault();
+          event.returnValue = "Did you upload your video?";
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      async function deleteVideo(videoId) {
+        if (!confirm("Are you sure you want to delete this video?")) return;
+
+        try {
+          const response = await fetch(`/delete-video/${videoId}`);
+          const result = await response.json();
+
+          if (result.success) {
+            document.getElementById(`video-${videoId}`).remove();
+          } else {
+            alert("Error deleting video");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error deleting video");
+        }
       }
 
-      const result = await response.json();
-      console.log("Upload response:", result); // Debug log
+      async function fetchVideos() {
+        try {
+          const response = await fetch("/my-videos");
+          const videos = await response.json();
 
-      if (result.success) {
-        document.getElementById("uploadProgress").textContent =
-          "Upload successful! The page will refresh in 5 seconds.";
-        setTimeout(() => {
-          location.reload();
-        }, 5000);
-      } else {
-        document.getElementById("uploadProgress").textContent =
-          "Upload failed: " + result.error;
-        document.getElementById("retakeButton").disabled = false; // Re-enable the retake button
+          if (response.ok) {
+            displayVideos(videos);
+          } else {
+            console.error("Error fetching videos:", videos.error);
+          }
+        } catch (error) {
+          console.error("Error fetching videos:", error);
+        }
       }
-    } catch (error) {
-      console.error("Upload error:", error); // Debug log
-      document.getElementById("uploadProgress").textContent =
-        "Upload failed: " + error;
-      document.getElementById("retakeButton").disabled = false; // Re-enable the retake button
-    }
-  };
 
-  const acceptedTypes = [
-    "video/mp4",
-    "video/quicktime",
-    "video/webm",
-    "video/x-matroska",
-  ];
+      function displayVideos(videos) {
+        const videoGrid = document.getElementById("videoGrid");
+        videoGrid.innerHTML = "";
 
-  document.getElementById("uploadFileButton").onclick = () => {
-    document.getElementById("fileInput").click();
-  };
+        videos.forEach((video) => {
+          const videoCard = document.createElement("div");
+          videoCard.className = "video-card";
+          videoCard.id = `video-${video.name}`;
 
-  document.getElementById("fileInput").onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+          const videoPreview = document.createElement("video");
+          videoPreview.className = "video-preview";
+          videoPreview.src = video.url;
+          videoPreview.controls = true;
 
-    if (!acceptedTypes.includes(file.type)) {
-      alert("File type not accepted\nSupported formats: MP4, MOV, WEBM, MKV");
-      e.target.value = "";
-      return;
-    }
+          const videoInfo = document.createElement("div");
+          videoInfo.className = "video-info";
+          videoInfo.innerHTML = `<p>Uploaded: ${new Date(
+            video.date
+          ).toLocaleString()}</p>`;
 
-    // Show preview
-    const url = URL.createObjectURL(file);
-    document.getElementById("preview").src = url;
-    document.getElementById("captureArea").classList.add("hidden");
-    document.getElementById("previewArea").classList.remove("hidden");
+          const videoActions = document.createElement("div");
+          videoActions.className = "video-actions";
 
-    // Store file for upload
-    recordedChunks = [file];
-  };
+          const downloadButton = document.createElement("a");
+          downloadButton.href = video.url;
+          downloadButton.download = video.name;
+          downloadButton.className = "button download";
+          downloadButton.textContent = "Download";
 
-  async function deleteVideo(videoId) {
-    if (!confirm("Are you sure you want to delete this video?")) return;
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "button delete";
+          deleteButton.textContent = "Delete";
+          deleteButton.onclick = () => deleteVideo(video.name);
 
-    try {
-      const response = await fetch(`/delete-video/${videoId}`);
-      const result = await response.json();
+          videoActions.appendChild(downloadButton);
+          videoActions.appendChild(deleteButton);
 
-      if (result.success) {
-        document.getElementById(`video-${videoId}`).remove();
-      } else {
-        alert("Error deleting video");
+          videoCard.appendChild(videoPreview);
+          videoCard.appendChild(videoInfo);
+          videoCard.appendChild(videoActions);
+
+          videoGrid.appendChild(videoCard);
+        });
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Error deleting video");
-    }
-  }
 
-  async function fetchVideos() {
-    try {
-      const response = await fetch("/my-videos");
-      const videos = await response.json();
-
-      if (response.ok) {
-        displayVideos(videos);
-      } else {
-        console.error("Error fetching videos:", videos.error);
-      }
-    } catch (error) {
-      console.error("Error fetching videos:", error);
-    }
-  }
-
-  function displayVideos(videos) {
-    const videoGrid = document.getElementById("videoGrid");
-    videoGrid.innerHTML = "";
-
-    videos.forEach((video) => {
-      const videoCard = document.createElement("div");
-      videoCard.className = "video-card";
-      videoCard.id = `video-${video.name}`;
-
-      const videoPreview = document.createElement("video");
-      videoPreview.className = "video-preview";
-      videoPreview.src = video.url;
-      videoPreview.controls = true;
-
-      const videoInfo = document.createElement("div");
-      videoInfo.className = "video-info";
-      videoInfo.innerHTML = `<p>Uploaded: ${new Date(
-        video.date
-      ).toLocaleString()}</p>`;
-
-      const videoActions = document.createElement("div");
-      videoActions.className = "video-actions";
-
-      const downloadButton = document.createElement("a");
-      downloadButton.href = video.url;
-      downloadButton.download = video.name;
-      downloadButton.className = "button download";
-      downloadButton.textContent = "Download";
-
-      const deleteButton = document.createElement("button");
-      deleteButton.className = "button delete";
-      deleteButton.textContent = "Delete";
-      deleteButton.onclick = () => deleteVideo(video.name);
-
-      videoActions.appendChild(downloadButton);
-      videoActions.appendChild(deleteButton);
-
-      videoCard.appendChild(videoPreview);
-      videoCard.appendChild(videoInfo);
-      videoCard.appendChild(videoActions);
-
-      videoGrid.appendChild(videoCard);
-    });
-  }
-
-  // Fetch videos on page load
-  fetchVideos();
-</script>
-{% endblock %}
+      // Fetch videos on page load
+      fetchVideos();
+    </script>
+  </body>
+</html>

@@ -1,19 +1,98 @@
-<!-- templates/email.html -->
-{% extends "base.html" %} {% block title %}Email Capture{% endblock %} {% block
-head %} {{ super() }} {% endblock %} {% block content %}
-<div>
-  <h2>Enter Your Email</h2>
-  {% if error %}
-  <p class="error">{{ error }}</p>
-  {% endif %}
-  <form id="emailForm" method="POST" action="/email">
-    <input
-      type="email"
-      name="email"
-      placeholder="Enter your email address"
-      required
-    />
-    <button type="submit">Submit</button>
-  </form>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Enter Email</title>
+    <style>
+      body {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial;
+      }
+      .container {
+        text-align: center;
+      }
+      input[type="email"],
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .error {
+        color: #dc3545;
+        margin: 10px 0;
+      }
+    </style>
+    <!-- <script src="https://www.google.com/recaptcha/api.js?render={{ site_key }}"></script>
+    <script>
+      function onSubmit(token) {
+        document.getElementById("emailForm").submit();
+      }
+    </script> -->
+  </head>
+  <body>
+    <div class="container">
+      <h1>Enter Your Email</h1>
+      {% if error %}
+      <p class="error">{{ error }}</p>
+      {% endif %}
+      <form id="emailForm" method="POST" action="/email">
+        <input
+          type="email"
+          name="email"
+          placeholder="Enter your email address"
+          required
+        />
+        <!-- <input
+          type="hidden"
+          name="g-recaptcha-response"
+          id="g-recaptcha-response"
+        /> -->
+        <button type="submit">Submit</button>
+        <!-- <button
+          type="submit"
+          onclick="grecaptcha.execute('{{ site_key }}', {action: 'submit'}).then(function(token) { document.getElementById('g-recaptcha-response').value = token; onSubmit(token); });"
+        >
+          Send Verification Code
+        </button> -->
+      </form>
+      <!-- <div id="codeSection" style="display: none">
+        <h1>Enter Verification Code</h1>
+        <form id="codeForm" method="POST" action="/verify-code">
+          <input
+            type="text"
+            name="code"
+            placeholder="Enter the code"
+            required
+          />
+          <button type="submit">Verify Code</button>
+        </form>
+      </div> -->
+      <!-- <p>
+        On clicking the button, you should receive a 6-digit verification code
+        at the email address you provide.
+      </p>
+      <p>
+        Please check your spam folder. If you don't receive the email at all
+        within two minutes, please try again.
+      </p>
+      <p>
+        Please email <a href="mailto:vine@crafton.dev">vine@crafton.dev</a> if
+        you have trouble with access.
+      </p> -->
+    </div>
+  </body>
+</html>
